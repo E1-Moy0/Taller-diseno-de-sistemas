@@ -5,4 +5,4 @@ José Rodríguez
 Germán Vergara  
 
 **usuario:** admin , **clave:** 1234  
-**usuario:** empleado , **clave:** abcd
+**usuario:** empleado , **clave:** 123
