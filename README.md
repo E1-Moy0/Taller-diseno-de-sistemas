@@ -1,4 +1,4 @@
-**Integrantes**:
+**Integrantes**:  
 Alejandro Moyano  
 Franco Otey  
 José Rodríguez  
