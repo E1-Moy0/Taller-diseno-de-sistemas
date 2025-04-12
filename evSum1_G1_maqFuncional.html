@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comercial El Buen Precio</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background-color: #0d1b2a; color: #e0e1dd; }
+    header { background-color: #1b263b; padding: 1rem; text-align: center; font-size: 1.5rem; }
+    nav { display: flex; justify-content: space-between; background-color: #415a77; padding: 1rem; flex-wrap: wrap; }
+    .nav-links { display: flex; gap: 1rem; }
+    nav a, nav button { color: #ffffff; background: none; border: none; font-weight: bold; cursor: pointer; }
+    .container { padding: 2rem; }
+    .card { display: none; background-color: #1b263b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+    .active { display: block; }
+    input, select, button { width: 100%; padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; border: none; }
+    .btn-guardar { background-color: #4caf50; color: white; }
+    .btn-exportar { background-color: #2196f3; color: white; margin-top: 1rem; }
+    .btn-venta { background-color: #ff9800; color: white; }
+    .btn-eliminar { background-color: #f44336; color: white; padding: 0.3rem 0.6rem; font-size: 0.9rem; border-radius: 4px; }
+    .btn-eliminar:hover { background-color: #d32f2f; }
+    table { width: 100%; margin-top: 1rem; border-collapse: collapse; }
+    th, td { padding: 0.5rem; border: 1px solid #778da9; text-align: left; }
+    th { background-color: #415a77; color: white; }
+    .alerta { color: #ff6b6b; margin-top: 0.5rem; }
+    #login { text-align: center; margin-top: 50px; padding: 2rem; }
+    .admin-only { display: none; }
+  </style>
+</head>
+<body>
+  <header>COMERCIAL EL BUEN PRECIO</header>
+  <div id="login">
+    <h2>Iniciar Sesión</h2>
+    <label>Usuario:<br><input type="text" id="usuario"></label>
+    <label>Contraseña:<br><input type="password" id="clave"></label>
+    <button onclick="iniciarSesion()">Ingresar</button>
+    <div id="mensaje-login"></div>
+  </div>
+  <nav id="navegacion" style="display:none;">
+    <div class="nav-links">
+      <a onclick="mostrarSeccion('registro')" class="admin-only">Registrar Producto</a>
+      <a onclick="mostrarSeccion('stock')">Stock</a>
+      <a onclick="mostrarSeccion('ventas')">Registrar Venta</a>
+      <a onclick="mostrarSeccion('reportes')" class="admin-only">Reportes</a>
+    </div>
+    <button onclick="cerrarSesion()">Cerrar Sesión</button>
+  </nav>
+  <div class="container">
+    <section id="registro" class="card">
+      <h2>Registrar Producto</h2>
+      <input type="text" id="nombre" placeholder="Nombre">
+      <input type="text" id="categoria" placeholder="Categoría">
+      <input type="number" id="precio" placeholder="Precio">
+      <input type="number" id="cantidad" placeholder="Cantidad">
+      <button class="btn-guardar" onclick="guardarProducto()">Guardar Producto</button>
+      <div id="lista-productos"></div>
+    </section>
+    <section id="stock" class="card">
+      <h2>Consulta de Stock</h2>
+      <div id="stock-lista"></div>
+      <button class="btn-exportar admin-only" onclick="exportarInventario()">Exportar a Excel</button>
+      <input type="file" id="excel-file" accept=".xlsx" class="admin-only">
+      <button class="btn-guardar admin-only" onclick="cargarDesdeExcel()">Cargar desde Excel</button>
+    </section>
+    <section id="ventas" class="card">
+      <h2>Registrar Venta</h2>
+      <select id="venta-nombre"></select>
+      <input type="number" id="venta-cantidad" placeholder="Cantidad Vendida">
+      <button class="btn-venta" onclick="registrarVenta()">Registrar Venta</button>
+      <div id="mensaje-venta"></div>
+    </section>
+    <section id="reportes" class="card">
+      <h2>Reportes de Ventas</h2>
+      <table>
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Total</th><th>Fecha</th></tr></thead>
+        <tbody id="tabla-ventas"></tbody>
+      </table>
+      <p id="total-ventas" style="margin-top: 1rem; font-weight: bold;"></p>
+      <button class="btn-exportar" onclick="exportarVentasExcel()">Exportar Ventas</button>
+    </section>
+  </div>
+  <script>
+    const usuarios = [
+      { usuario: "admin", clave: "1234", rol: "admin" },
+      { usuario: "empleado", clave: "abcd", rol: "empleado" }
+    ];
+
+    function iniciarSesion() {
+      const user = document.getElementById('usuario').value.trim();
+      const pass = document.getElementById('clave').value.trim();
+      const loginMsg = document.getElementById('mensaje-login');
+      const usuario = usuarios.find(u => u.usuario === user && u.clave === pass);
+
+      if (usuario) {
+        localStorage.setItem('rolActivo', usuario.rol);
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('navegacion').style.display = 'flex';
+        if (usuario.rol === 'admin') {
+          document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-block');
+        } else {
+          document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+        }
+        mostrarSeccion(usuario.rol === 'admin' ? 'registro' : 'stock');
+      } else {
+        loginMsg.innerHTML = '<p class="alerta">Usuario o contraseña incorrectos</p>';
+      }
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('rolActivo');
+      location.reload();
+    }
+
+    function mostrarSeccion(id) {
+      document.querySelectorAll('.card').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'registro') mostrarProductos();
+      if (id === 'stock') mostrarStock();
+      if (id === 'ventas') cargarProductosVenta();
+      if (id === 'reportes') mostrarVentas();
+    }
+
+    function guardarProducto() {
+      const nombre = document.getElementById('nombre').value.trim();
+      const categoria = document.getElementById('categoria').value.trim();
+      const precio = parseFloat(document.getElementById('precio').value);
+      const cantidad = parseInt(document.getElementById('cantidad').value);
+      if (!nombre || !categoria || isNaN(precio) || isNaN(cantidad)) return alert('Campos incompletos');
+      let productos = JSON.parse(localStorage.getItem('productos')) || [];
+      const idx = productos.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+      if (idx >= 0) productos[idx].cantidad += cantidad;
+      else productos.push({ nombre, categoria, precio, cantidad });
+      localStorage.setItem('productos', JSON.stringify(productos));
+      mostrarProductos();
+    }
+
+    function eliminarProducto(index) {
+      let productos = JSON.parse(localStorage.getItem('productos')) || [];
+      if (confirm("¿Eliminar este producto?")) {
+        productos.splice(index, 1);
+        localStorage.setItem('productos', JSON.stringify(productos));
+        mostrarProductos();
+      }
+    }
+
+    function mostrarProductos() {
+      const cont = document.getElementById('lista-productos');
+      const productos = JSON.parse(localStorage.getItem('productos')) || [];
+      cont.innerHTML = `
+        <table>
+          <thead><tr><th>#</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Cantidad</th><th>Acción</th></tr></thead>
+          <tbody>
+            ${productos.map((p, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${p.nombre}</td>
+                <td>${p.categoria}</td>
+                <td>$${p.precio}</td>
+                <td>${p.cantidad}</td>
+                <td><button class="btn-eliminar" onclick="eliminarProducto(${i})">Eliminar</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function mostrarStock() {
+      const cont = document.getElementById('stock-lista');
+      const productos = JSON.parse(localStorage.getItem('productos')) || [];
+      cont.innerHTML = productos.map(p => `<div>${p.nombre} - ${p.categoria} - Cant: ${p.cantidad} ${p.cantidad <= 5 ? '<span class="alerta">⚠️ Stock bajo</span>' : ''}</div>`).join('');
+    }
+
+    function cargarDesdeExcel() {
+      const input = document.getElementById('excel-file');
+      if (!input.files.length) return alert('Selecciona archivo');
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        let productos = JSON.parse(localStorage.getItem('productos')) || [];
+        rows.forEach(r => {
+          const { Nombre, Categoría, Precio, Cantidad } = r;
+          if (Nombre && Categoría && !isNaN(Precio) && !isNaN(Cantidad)) {
+            const idx = productos.findIndex(p => p.nombre.toLowerCase() === Nombre.toLowerCase());
+            if (idx >= 0) productos[idx].cantidad += Cantidad;
+            else productos.push({ nombre: Nombre, categoria: Categoría, precio: Precio, cantidad: Cantidad });
+          }
+        });
+        localStorage.setItem('productos', JSON.stringify(productos));
+        mostrarStock();
+      };
+      reader.readAsArrayBuffer(input.files[0]);
+    }
+
+    function cargarProductosVenta() {
+      const select = document.getElementById('venta-nombre');
+      select.innerHTML = '';
+      const productos = JSON.parse(localStorage.getItem('productos')) || [];
+      productos.forEach(p => {
+        const op = document.createElement('option');
+        op.value = p.nombre;
+        op.textContent = p.nombre;
+        select.appendChild(op);
+      });
+    }
+
+    function registrarVenta() {
+      const nombre = document.getElementById('venta-nombre').value;
+      const cantidad = parseInt(document.getElementById('venta-cantidad').value);
+      const productos = JSON.parse(localStorage.getItem('productos')) || [];
+      const ventas = JSON.parse(localStorage.getItem('ventas')) || [];
+      const index = productos.findIndex(p => p.nombre === nombre);
+      const mensaje = document.getElementById('mensaje-venta');
+      if (index < 0 || isNaN(cantidad)) return mensaje.innerHTML = '<p class="alerta">Producto no encontrado o cantidad inválida</p>';
+      if (productos[index].cantidad < cantidad) return mensaje.innerHTML = '<p class="alerta">Stock insuficiente</p>';
+      productos[index].cantidad -= cantidad;
+      ventas.push({ nombre, cantidad, total: productos[index].precio * cantidad, fecha: new Date().toLocaleString() });
+      localStorage.setItem('productos', JSON.stringify(productos));
+      localStorage.setItem('ventas', JSON.stringify(ventas));
+      mensaje.innerHTML = '<p style="color: lightgreen;">Venta registrada</p>';
+      mostrarStock();
+    }
+
+    function mostrarVentas() {
+      const ventas = JSON.parse(localStorage.getItem('ventas')) || [];
+      const tabla = document.getElementById('tabla-ventas');
+      const totalTexto = document.getElementById('total-ventas');
+      tabla.innerHTML = '';
+      let totalGeneral = 0;
+
+      ventas.forEach(v => {
+        totalGeneral += v.total;
+        tabla.innerHTML += `<tr>
+          <td>${v.nombre}</td>
+          <td>${v.cantidad}</td>
+          <td>$${v.total}</td>
+          <td>${v.fecha}</td>
+        </tr>`;
+      });
+
+      totalTexto.innerText = `💵 Total de Ventas: $${totalGeneral.toLocaleString()}`;
+    }
+
+    function exportarInventario() {
+      const productos = JSON.parse(localStorage.getItem('productos')) || [];
+      const ws = XLSX.utils.json_to_sheet(productos);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+      XLSX.writeFile(wb, 'inventario.xlsx');
+    }
+
+    function exportarVentasExcel() {
+      const ventas = JSON.parse(localStorage.getItem('ventas')) || [];
+      const ws = XLSX.utils.json_to_sheet(ventas);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+      XLSX.writeFile(wb, 'ventas.xlsx');
+    }
+
+    window.onload = () => {
+      const rol = localStorage.getItem('rolActivo');
+      if (rol) {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('navegacion').style.display = 'flex';
+        if (rol === 'admin') document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'inline-block');
+        else document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'none');
+        mostrarSeccion(rol === 'admin' ? 'registro' : 'stock');
+      }
+    };
+  </script>
+</body>
+</html>
