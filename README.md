@@ -15,3 +15,6 @@ Germán Vergara
 3. Instalar Flask y SQLAlchemy con la terminal abierta en la carpeta principal con el siguiente comando "pip install flask flask_sqlalchemy".  
 4. En la misma consola ejecutar el siguiente comando "python app.py" o "python.exe app.py".
 5. En cualquier navegador abrir el siguiente enlace **http://127.0.0.1:5000**.  
+
+**Plataforma Utilizada para Query de SQL**  
+- SQL Server Management Studio 20
