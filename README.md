@@ -7,3 +7,5 @@ Germán Vergara
 **Datos Actividad Sumativa 1**  
 **usuario:** admin , **clave:** 1234  
 **usuario:** empleado , **clave:** 123
+
+**Datos Actividad Sumativa 2**  
