@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Departamentos</h2>
+<form method="POST">
+  Nombre: <input name="nombre"><br>
+  Ubicación: <input name="ubicacion"><br>
+  Presupuesto: <input name="presupuesto"><br>
+  Jefe:
+  <select name="id_jefe">
+    <option value="">-- Ninguno --</option>
+    {% for e in empleados %}
+    <option value="{{ e.id }}">{{ e.nombre }} {{ e.apellido }}</option>
+    {% endfor %}
+  </select><br>
+  <button type="submit">Agregar</button>
+</form>
+<hr>
+<ul>
+  {% for d in departamentos %}
+    <li>{{ d.nombre }} - {{ d.ubicacion }} - ${{ d.presupuesto }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}
