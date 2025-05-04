@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Empleados</h2>
+<form method="POST">
+  Nombre: <input name="nombre"><br>
+  Apellido: <input name="apellido"><br>
+  Teléfono: <input name="telefono" placeholder="123-4567"><br>
+  Correo: <input name="correo" placeholder="ejemplo@dundermifflin.com"><br>
+  Departamento:
+  <select name="id_departamento">
+    {% for d in departamentos %}
+    <option value="{{ d.id }}">{{ d.nombre }}</option>
+    {% endfor %}
+  </select><br>
+  Jefe:
+  <select name="id_jefe">
+    <option value="">-- Ninguno --</option>
+    {% for e in empleados %}
+    <option value="{{ e.id }}">{{ e.nombre }} {{ e.apellido }}</option>
+    {% endfor %}
+  </select><br>
+  <button type="submit">Agregar</button>
+</form>
+<hr>
+<ul>
+  {% for e in empleados %}
+    <li>{{ e.nombre }} {{ e.apellido }} - {{ e.correo }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}
