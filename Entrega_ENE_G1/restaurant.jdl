@@ -1,0 +1,43 @@
+enum OrderStatus {
+  NUEVO,
+  PREPARANDO,
+  SERVIDO,
+  PAGADO
+}
+
+entity Mesa {
+  numero   Integer  required,
+  asientos Integer  required
+}
+
+entity Plato {
+  nombre      String     required,
+  descripcion String,
+  precio      BigDecimal required,
+  disponible  Boolean    required
+}
+
+entity Pedido {
+  fecha  Instant    required,
+  estado OrderStatus required,
+  total  BigDecimal required
+}
+
+entity DetallePedido {
+  cantidad Integer    required,
+  precio   BigDecimal required
+}
+
+relationship ManyToOne {
+  Pedido{mesa(numero)}         to Mesa,
+  DetallePedido{pedido}        to Pedido,
+  DetallePedido{plato(nombre)} to Plato
+}
+
+//relationship OneToMany {
+//  Pedido to DetallePedido{pedido}
+//}
+
+dto * with mapstruct
+service * with serviceImpl
+paginate * with pagination
